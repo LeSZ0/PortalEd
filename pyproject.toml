@@ -1,0 +1,27 @@
+[tool.poetry]
+name = "portaled"
+version = "0.1.0"
+description = "An Education Portal"
+authors = ["Diego Rodriguez"]
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.11"
+fastapi = "^0.111.0"
+pydantic = "^2.7.1"
+SQLAlchemy = "^2.0.30"
+pytest = "^8.2.0"
+bcrypt = "^4.1.3"
+cryptography = "^42.0.7"
+python-jose = {extras = ["cryptography"], version = "^3.3.0"}
+python-multipart = "^0.0.9"
+passlib = {extras = ["bcrpyt"], version = "^1.7.4"}
+python-dotenv = "^1.0.1"
+
+[tool.poetry.group.dev.dependencies]
+black = "^24.4.2"
+flake8 = "^7.0.0"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
