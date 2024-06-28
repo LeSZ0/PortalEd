@@ -133,7 +133,7 @@ def delete_user(db: Session, user_id: UUID) -> str | NotFoundError:
     return "User deleted successfuly"
 
 
-def authenticate_user(
+async def authenticate_user(
     db: Session,
     password: str,
     username: Optional[str] = None,
@@ -153,8 +153,8 @@ def authenticate_user(
     if not user.is_active:
         raise NotFoundError("User does not exist")
 
-    valid_credentials = check_credentials(password, user)
+    valid_credentials = await check_credentials(password, user)
     if not valid_credentials:
-        raise UnauthorizedError()
+        raise UnauthorizedError("Invalid credentials")
 
     return user

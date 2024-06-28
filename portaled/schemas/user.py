@@ -15,6 +15,7 @@ class UserSchema(BaseModel):
     dni: str
     profiles: Optional[list[UserProfileSchema]] = None
     created_at: datetime
+    is_active: bool
 
 
 class UserCreateSchema(BaseModel):

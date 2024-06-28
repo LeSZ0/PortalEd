@@ -3,10 +3,11 @@ from fastapi.security import OAuth2PasswordRequestForm
 from portaled.queries.user import authenticate_user
 from portaled.database.db import DBSession
 from portaled.utils.errors import UnauthorizedError, InvalidToken, NotFoundError
-from portaled.auth.utils import create_access_token, verify_token
+from portaled.auth.utils import create_access_token, verify_token, refresh_token
 from portaled.schemas.user import UserSchema
 from portaled.schemas.profile import ProfileSchema
 from portaled.auth.responses import TokenResponse
+from portaled.auth.schemas import LoginSchema
 
 
 auth_router = APIRouter(prefix="/auth", tags=["auth"])
@@ -16,14 +17,9 @@ auth_router = APIRouter(prefix="/auth", tags=["auth"])
 async def generate_access_token(
     db: DBSession, form_data: OAuth2PasswordRequestForm = Depends()
 ):
-    try:
-        authenticated_user = authenticate_user(
-            db=db, password=form_data.password, username=form_data.username
-        )
-    except UnauthorizedError as e:
-        raise HTTPException(status_code=401, detail=str(e))
-    except NotFoundError as e:
-        raise HTTPException(status_code=404, detail=str(e))
+    authenticated_user = await authenticate_user(
+        db=db, password=form_data.password, username=form_data.username
+    )
 
     profiles = list()
     if authenticated_user.profiles:
@@ -45,21 +41,36 @@ async def generate_access_token(
         dni=authenticated_user.dni,
         profile=profiles if authenticated_user.profiles else None,
         created_at=authenticated_user.created_at,
+        is_active=authenticated_user.is_active,
     )
 
-    access_token = await create_access_token(
-        {
-            "user": user.model_dump(mode="json"),
-            "user_active": authenticated_user.is_active,
-        }
-    )
+    access_token = await create_access_token(subject=user)
     return TokenResponse(access_token=access_token)
+
+
+@auth_router.post("/login", response_model=TokenResponse)
+async def login(db: DBSession, schema: LoginSchema):
+    authenticated_user = await authenticate_user(
+        db=db, username=schema.username, password=schema.password, email=schema.email
+    )
+    user = UserSchema(**authenticated_user.__dict__)
+    access_token = await create_access_token(subject=user)
+    refresh_token = await create_access_token(subject=user, refresh_token=True)
+
+    return TokenResponse(access_token=access_token, refresh_token=refresh_token)
 
 
 @auth_router.post("/token/verify")
 async def verify_user_token(token: str):
     try:
-        token_verified = await verify_token(token)
-        return token_verified
+        user = await verify_token(token)
+        return user
     except InvalidToken as e:
         raise HTTPException(status_code=e.status_code, detail=e.msg)
+
+
+@auth_router.post("/token/refresh")
+async def refresh_access_token(token: str):
+    new_access_token = await refresh_token(token)
+    return TokenResponse(access_token=new_access_token)
+

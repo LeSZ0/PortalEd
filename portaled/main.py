@@ -8,7 +8,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from dotenv import load_dotenv
 from portaled.utils.get_env import getenv
 import portaled.error_handlers as error_handlers
-from portaled.utils.errors import NotFoundError
+from portaled.utils.errors import NotFoundError, UnauthorizedError
 
 
 load_dotenv("portaled/envs/dev.env")
@@ -27,5 +27,6 @@ app.add_middleware(
 
 app.add_exception_handler(AssertionError, error_handlers.assertion_error_handler)
 app.add_exception_handler(NotFoundError, error_handlers.not_found_error_handler)
+app.add_exception_handler(UnauthorizedError, error_handlers.unauthorized_error_handler)
 
 init_db()
